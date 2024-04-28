@@ -1,4 +1,4 @@
-package com.labdessoft.roteiro01.Service;
+package com.labdessoft.roteiro01.service;
 
 import com.labdessoft.roteiro01.entity.Task;
 import com.labdessoft.roteiro01.entity.TaskType;
@@ -7,57 +7,85 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TaskService {
+
     @Autowired
     private TaskRepository taskRepository;
 
-    public EntyTask createTask(EntyTask task) {
-        // Verifica se o tipo de tarefa está definido
-        if (task.getTaskType() == null) {
-            // Define um valor padrão para o tipo de tarefa, se necessário
-            task.setTaskType(TaskType.DATA.ordinal()); // Por exemplo, definindo como tipo "Data"
+    public Task obterTarefaPorId(Long id) {
+        Optional<Task> taskOptional = taskRepository.findById(id);
+        if (taskOptional.isPresent()) {
+            Task task = taskOptional.get();
+            setTaskStatus(task);
+            return task;
         }
-        // Salva a tarefa no banco de dados
-        return taskRepository.save(task);
+        return null;
     }
 
-    public EntyTask getTaskById(Long taskId) {
-        // Recupera a tarefa do banco de dados
-        return taskRepository.findById(taskId).orElse(null);
+    public Task criarTarefa(Task tarefa) {
+        if (tarefa.getType() == TaskType.DATA && tarefa.getDueDate().isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("A data de vencimento para tarefas do tipo 'Data' deve ser igual ou após a data atual.");
+        }
+        setTaskStatus(tarefa);
+        return taskRepository.save(tarefa);
     }
 
-    public List<EntyTask> getAllTasks() {
-        return taskRepository.findAll();
+    public Task atualizarTarefa(Long id, Task tarefaAtualizada) {
+        Optional<Task> tarefaOptional = taskRepository.findById(id);
+        if (tarefaOptional.isPresent()) {
+            Task tarefaExistente = tarefaOptional.get();
+            // Atualizar propriedades comuns
+            tarefaExistente.setDescription(tarefaAtualizada.getDescription());
+            tarefaExistente.setCompleted(tarefaAtualizada.getCompleted());
+            // Atualizar propriedades específicas do tipo
+            tarefaExistente.setType(tarefaAtualizada.getType());
+            tarefaExistente.setDeadlineInDays(tarefaAtualizada.getDeadlineInDays());
+            tarefaExistente.setDueDate(tarefaAtualizada.getDueDate());
+            tarefaExistente.setPriority(tarefaAtualizada.getPriority());
+            setTaskStatus(tarefaExistente); // Atualizar status
+            return taskRepository.save(tarefaExistente);
+        } else {
+            return null;
+        }
     }
 
-    // Métodos abaixo precisam ser implementados
-    public List<EntyTask> gerenciarTarefas() {
-        // Implementar a lógica para gerenciar tarefas
-        // Exemplo: listar todas as tarefas do banco de dados
-        return taskRepository.findAll();
+    public void deletarTarefa(Long id) {
+        taskRepository.deleteById(id);
     }
 
-    public List<EntyTask> concluirTarefas() {
-        // Implementar a lógica para concluir tarefas
-        // Exemplo: listar todas as tarefas concluídas do banco de dados
-        return taskRepository.findByCompleted(true);
+    public List<Task> obterTodasTarefas() {
+        List<Task> tarefas = taskRepository.findAll();
+        for (Task task : tarefas) {
+            setTaskStatus(task);
+        }
+        return tarefas;
     }
 
-    public List<EntyTask> priorizarTarefas() {
-        // Implementar a lógica para priorizar tarefas
-        // Exemplo: listar todas as tarefas priorizadas do banco de dados
-        // Considere adicionar um campo na entidade Task para indicar a prioridade
-        // Exemplo: return taskRepository.findByPriority("high");
-        return taskRepository.findAll(); // Exemplo com lista completa (sem priorização)
-    }
-
-    public List<EntyTask> categorizarTarefas() {
-        // Implementar a lógica para categorizar tarefas
-        // Exemplo: listar todas as tarefas categorizadas do banco de dados
-        // Considere adicionar um campo na entidade Task para indicar a categoria
-        // Exemplo: return taskRepository.findByCategory("work");
-        return taskRepository.findAll(); // Exemplo com lista completa (sem categorização)
+    private void setTaskStatus(Task task) {
+        LocalDate currentDate = LocalDate.now();
+        if (task.getType() == TaskType.DATA) {
+            if (task.getDueDate().isBefore(currentDate)) {
+                task.setStatus(TaskStatus.ATRASADA);
+            } else if (task.getDueDate().isEqual(currentDate)) {
+                task.setStatus(TaskStatus.PREVISTA);
+            } else {
+                task.setStatus(TaskStatus.CONCLUIDA);
+            }
+        } else if (task.getType() == TaskType.PRAZO) {
+            // Lógica similar para tarefas do tipo Prazo
+        } else {
+            if (task.getCompleted()) {
+                task.setStatus(TaskStatus.CONCLUIDA);
+            } else {
+                task.setStatus(TaskStatus.PREVISTA);
+            }
+        }
     }
 }
