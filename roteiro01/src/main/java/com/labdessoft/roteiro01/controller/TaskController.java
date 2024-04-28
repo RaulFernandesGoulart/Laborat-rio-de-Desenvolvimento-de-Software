@@ -1,78 +1,65 @@
-package com.labdessoft.roteiro01.controller;
-
-
+package com.example.roteiro01.controller;
 
 import com.example.roteiro01.entity.Task;
 import com.example.roteiro01.service.TaskService;
-import io.swagger.v3.oas.annotations.Operation;
-import org.springframework.http.HttpStatus;
+import com.example.roteiro01.model.ErrorMessage;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
+import java.net.URI;
 import java.util.List;
 
 @RestController
 @RequestMapping("/tasks")
 public class TaskController {
 
-    private final TaskService taskService;
+    @Autowired
+    private TaskService taskService;
 
-    public TaskController(TaskService taskService) {
-        this.taskService = taskService;
-    }
-
-    @GetMapping
-    public ResponseEntity<List<Task>> getAllTasks() {
-        List<Task> tasks = taskService.getAllTasks();
-        tasks.forEach(task -> {
-            if (task.getCompleted() == null) {
-                task.setCompleted(false);
-            }
-            if (task.isTaskTypeNull()) {
-                task.setTaskType(0);
-            }
-        });
-        return ResponseEntity.ok(tasks);
+    @GetMapping("/{id}")
+    public ResponseEntity<Task> obterTarefa(@PathVariable Long id) {
+        Task tarefa = taskService.obterTarefaPorId(id);
+        if (tarefa != null) {
+            return ResponseEntity.ok(tarefa);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping
-    public ResponseEntity<Task> createTask(@RequestBody Task task) {
-        Task createdTask = taskService.createTask(task);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
+    public ResponseEntity<?> criarTarefa(@Valid @RequestBody Task tarefa) {
+        try {
+            Task tarefaCriada = taskService.criarTarefa(tarefa);
+            URI location = URI.create("/tasks/" + tarefaCriada.getId());
+            return ResponseEntity.created(location).body(tarefaCriada);
+        } catch (IllegalArgumentException e) {
+            ErrorMessage errorMessage = new ErrorMessage(e.getMessage());
+            return ResponseEntity.badRequest().body(errorMessage);
+        }
     }
 
-    @GetMapping("/manage")
-    @Operation(summary = "Manage tasks from the list")
-    public ResponseEntity<List<Task>> manageTasks() {
-        List<Task> taskList = taskService.manageTasks();
-        return ResponseEntity.ok(taskList);
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Task> atualizarTarefa(@PathVariable Long id, @Valid @RequestBody Task tarefa) {
+        Task tarefaAtualizada = taskService.atualizarTarefa(id, tarefa);
+        if (tarefaAtualizada != null) {
+            return ResponseEntity.ok(tarefaAtualizada);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    @GetMapping("/complete")
-    @Operation(summary = "Complete tasks from the list")
-    public ResponseEntity<List<Task>> completeTasks() {
-        List<Task> taskList = taskService.completeTasks();
-        return ResponseEntity.ok(taskList);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletarTarefa(@PathVariable Long id) {
+        taskService.deletarTarefa(id);
+        return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/prioritize")
-    @Operation(summary = "Prioritize tasks from the list")
-    public ResponseEntity<List<Task>> prioritizeTasks() {
-        List<Task> taskList = taskService.prioritizeTasks();
-        return ResponseEntity.ok(taskList);
-    }
-
-    @GetMapping("/categorize")
-    @Operation(summary = "Categorize tasks from the list")
-    public ResponseEntity<List<Task>> categorizeTasks() {
-        List<Task> taskList = taskService.categorizeTasks();
-        return ResponseEntity.ok(taskList);
+    @GetMapping
+    public ResponseEntity<List<Task>> obterTodasTarefas() {
+        List<Task> tarefas = taskService.obterTodasTarefas();
+        return ResponseEntity.ok(tarefas);
     }
 }
-
-
-
-
-
-
-

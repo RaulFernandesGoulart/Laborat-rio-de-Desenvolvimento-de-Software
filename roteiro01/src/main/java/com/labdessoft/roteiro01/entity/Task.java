@@ -1,18 +1,18 @@
-package com.labdessoft.roteiro01.entity;
-
-
+package com.example.roteiro01.entity;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.validation.constraints.Size;
+
 import java.time.LocalDate;
-import java.time.Period;
 
 @Entity
 @Getter
@@ -28,51 +28,29 @@ public class Task {
     @Size(min = 10, message = "Descrição da tarefa deve possuir pelo menos 10 caracteres")
     private String description;
 
-    private boolean completed;
+    private Boolean completed;
 
-    @Column(nullable = true)
-    private Integer taskType;
+    private TaskType type; // Tipo de tarefa
+    private Long deadlineInDays; // Prazo em dias
+    private LocalDate dueDate; // Data de vencimento
+    private Priority priority; // Nível de prioridade
+    private TaskStatus status; // Status da tarefa
 
-    @FutureOrPresent(message = "A data prevista de conclusão deve ser igual ou superior à data atual")
-    private LocalDate dueDate;
-
-    @Column(nullable = false, columnDefinition = "integer default 0")
-    private int dueDays;
-
-    @Column(nullable = true)
-    private Integer priorityLevel;
-
-    public String getStatus() {
-        LocalDate currentDate = LocalDate.now();
-        switch (TaskType.values()[taskType]) {
-            case DATA:
-                if (completed) {
-                    return "Concluída";
-                } else if (dueDate != null && dueDate.isBefore(currentDate)) {
-                    long daysLate = Period.between(dueDate, currentDate).getDays();
-                    return String.format("%d dias de atraso", daysLate);
-                } else {
-                    return "Prevista";
-                }
-            case PRAZO:
-                if (completed) {
-                    return "Concluída";
-                } else if (dueDate != null && currentDate.isAfter(dueDate.plusDays(dueDays))) {
-                    long daysLate = Period.between(dueDate.plusDays(dueDays), currentDate).getDays();
-                    return String.format("%d dias de atraso", daysLate);
-                } else {
-                    return "Prevista";
-                }
-            case LIVRE:
-                return completed ? "Concluída" : "Prevista";
-            default:
-                return "Tipo de tarefa inválido";
-        }
+    public Task(String description){
+        this.description = description;
     }
 
     @Override
     public String toString() {
-        return String.format("Task [id=%d, description=%s, completed=%s, taskType=%d, priorityLevel=%d]",
-                id, description, completed, taskType, priorityLevel);
+        return "Task{" +
+                "id=" + id +
+                ", description='" + description + '\'' +
+                ", completed=" + completed +
+                ", type=" + type +
+                ", deadlineInDays=" + deadlineInDays +
+                ", dueDate=" + dueDate +
+                ", priority=" + priority +
+                ", status=" + status +
+                '}';
     }
 }
