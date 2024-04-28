@@ -1,4 +1,4 @@
-package com.example.roteiro01.entity;
+package com.labdessoft.roteiro01.entity;
 
 public enum Priority {
     ALTA,

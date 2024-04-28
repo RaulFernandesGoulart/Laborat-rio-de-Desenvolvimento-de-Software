@@ -1,4 +1,4 @@
-package com.example.roteiro01.controller;
+package com.labdessoft.roteiro01.controller;
 
 import com.example.roteiro01.entity.Task;
 import com.example.roteiro01.service.TaskService;

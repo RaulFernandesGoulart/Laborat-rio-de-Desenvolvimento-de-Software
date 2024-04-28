@@ -1,4 +1,4 @@
-package com.example.roteiro01.entity;
+package com.labdessoft.roteiro01.entity;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
